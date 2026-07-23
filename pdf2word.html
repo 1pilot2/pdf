@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="PDF 转 Word：1:1 复原版式与页数、图片原样保留、全文可编辑，全部在浏览器本地完成，免费无限制。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
+<title>PDF转Word · 1:1复原</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #3a7bd5 100%);
+    color: #333;
+    padding: 40px 16px;
+  }
+  .container { max-width: 760px; margin: 0 auto; }
+  header { text-align: center; color: #fff; margin-bottom: 28px; }
+  header h1 { font-size: 32px; letter-spacing: 2px; margin-bottom: 10px; }
+  header p { opacity: .85; font-size: 15px; }
+  .badges { margin-top: 14px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+  .badge {
+    background: rgba(255,255,255,.16); color: #fff; border: 1px solid rgba(255,255,255,.35);
+    border-radius: 999px; padding: 4px 14px; font-size: 13px;
+  }
+  .card {
+    background: #fff; border-radius: 16px; padding: 28px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.25);
+  }
+  .dropzone {
+    border: 2px dashed #9db8dd; border-radius: 12px; padding: 48px 20px;
+    text-align: center; cursor: pointer; transition: all .2s; background: #f7faff;
+  }
+  .dropzone:hover, .dropzone.dragover { border-color: #2a5298; background: #eaf1fb; }
+  .dropzone .icon { font-size: 46px; margin-bottom: 12px; }
+  .dropzone .main { font-size: 17px; color: #2a5298; font-weight: 600; }
+  .dropzone .sub { font-size: 13px; color: #888; margin-top: 8px; }
+  .file-list { margin-top: 20px; }
+  .file-row {
+    display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+    border: 1px solid #e3e9f4; border-radius: 10px; margin-bottom: 10px; background: #fbfcfe;
+  }
+  .file-row .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+  .file-row .size { color: #999; font-size: 12px; flex-shrink: 0; }
+  .file-row .status { font-size: 12px; flex-shrink: 0; min-width: 72px; text-align: right; }
+  .status.ok { color: #1a9e54; }
+  .status.err { color: #d23c3c; }
+  .status.busy { color: #2a5298; }
+  .warn { color: #c47f17; font-size: 12px; margin-top: 4px; }
+  .progress { height: 6px; background: #e6ecf5; border-radius: 3px; overflow: hidden; margin-top: 6px; }
+  .progress > div { height: 100%; width: 0%; background: linear-gradient(90deg,#2a5298,#3a7bd5); transition: width .15s; }
+  .btn {
+    border: none; border-radius: 8px; padding: 7px 16px; font-size: 13px; cursor: pointer;
+    background: #2a5298; color: #fff; transition: background .2s; flex-shrink: 0;
+  }
+  .btn:hover { background: #1e3c72; }
+  .btn:disabled { background: #b6c4dc; cursor: not-allowed; }
+  .btn.ghost { background: #eef2f9; color: #2a5298; }
+  .btn.ghost:hover { background: #dde6f3; }
+  .actions { margin-top: 18px; display: flex; justify-content: center; gap: 12px; }
+  footer { color: rgba(255,255,255,.85); font-size: 12.5px; line-height: 1.9; margin-top: 26px; text-align: center; }
+  .tips { background: #fff8e6; border: 1px solid #ffe1a8; color: #8a6d1d; border-radius: 10px;
+    padding: 10px 14px; font-size: 13px; margin-top: 18px; line-height: 1.8; }
+  @media (max-width: 560px) {
+    body { padding: 24px 10px; }
+    header h1 { font-size: 25px; }
+    .card { padding: 18px 14px; border-radius: 12px; }
+    .dropzone { padding: 34px 12px; }
+    .file-row .status { min-width: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>PDF 转 Word</h1>
+    <p>1:1 复原版式与页数 · 图片原样保留 · 全文可编辑 —— 全部在浏览器本地完成，免费无限制</p>
+    <div class="badges">
+      <span class="badge">✔ 1:1 版式复原</span>
+      <span class="badge">✔ 页数一致</span>
+      <span class="badge">✔ 全文可编辑</span>
+      <span class="badge">✔ 不限文件大小</span>
+      <span class="badge">✔ 本地处理 · 隐私安全</span>
+    </div>
+  </header>
+
+  <div class="card">
+    <div class="dropzone" id="dropzone">
+      <div class="icon">📄➜📝</div>
+      <div class="main">点击选择 PDF 文件，或把文件拖到这里</div>
+      <div class="sub">支持一次选择多个文件批量转换</div>
+      <input type="file" id="fileInput" accept=".pdf,application/pdf" multiple hidden>
+    </div>
+
+    <div class="file-list" id="fileList"></div>
+
+    <div class="actions" id="actions" style="display:none">
+      <button class="btn" id="convertAllBtn">开始转换</button>
+      <button class="btn ghost" id="clearBtn">清空列表</button>
+    </div>
+
+    <div class="tips">
+      说明：① 每个 PDF 页面在 Word 中复原为同尺寸、同页数的一页，版式 1:1 不动；
+      ② 正文文字按原坐标重建为可编辑文本框，双击文字即可增删查改，图片、表格线、图表原样保留；
+      ③ 图片内部的文字属于图像内容，随图原位保留；
+      ④ 文字编码异常的页面为避免乱码会整页保留高清图像；
+      ⑤ 转换全程在浏览器本地完成，文件不会上传。转换引擎在同目录 pdf2word.js 中，需与该文件一起使用。
+    </div>
+  </div>
+
+  <footer>纯前端实现 · 文件不上传 · 建议在 Chrome / Edge 最新版本中使用</footer>
+</div>
+
+<script src="pdf2word.js"></script>
+</body>
+</html>
